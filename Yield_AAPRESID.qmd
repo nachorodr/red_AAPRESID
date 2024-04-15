@@ -1,0 +1,61 @@
+---
+title: "Yield_AAPRESID"
+author: "Rodriguez, I"
+execute:
+  echo: false
+editor: visual
+output: true
+warning: false
+editor_options: 
+  chunk_output_type: inline
+format:
+  html:
+    code-fold: false
+    code-tools: false
+---
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+## Load packages
+
+```{r}
+library(tidyverse)
+library(nlme)
+library(lme4)
+library(ggpubr)
+library(RColorBrewer)
+```
+
+## Load data
+
+```{r}
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_names.xlsx")
+```
+
+## Filter
+
+```{r}
+#campaña
+campana<- c("2023/24")
+
+dat_1<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Necochea")
+
+dat_2<-dat_1 %>% filter( Sitio %in% site)
+```
+
+## Plot
+
+```{r}
+ggplot()+
+    geom_point(data = dat_2,
+               aes(x= hibrido,
+                   y= Rendimiento,
+                   color= hibrido))
+```
+
