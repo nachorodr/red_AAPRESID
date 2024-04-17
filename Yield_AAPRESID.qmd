@@ -49,13 +49,49 @@ site<- c("Necochea")
 dat_2<-dat_1 %>% filter( Sitio %in% site)
 ```
 
+## Select columns
+
+```{r}
+dat_3 <- dat_2 %>% 
+    dplyr::select("Año","hibrido","Rendimiento")
+```
+
+
 ## Plot
 
 ```{r}
 ggplot()+
-    geom_point(data = dat_2,
+    geom_point(data = dat_3,
                aes(x= hibrido,
                    y= Rendimiento,
                    color= hibrido))
 ```
 
+## Bar plot
+
+```{r}
+# Convertir Rendimiento a numérico
+dat_3$Rendimiento <- as.numeric(as.character(dat_3$Rendimiento))
+
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_3 %>%
+  dplyr::arrange(desc(Rendimiento))
+
+# Híbridos a excluir
+hibridos_a_excluir <- c("NK 3970 +30%", "NK 3970", "NK 3970 -30%", "NK 3970 Lote")
+
+# Filtrar los datos para excluir los híbridos seleccionados
+data_filtered <- data_ordered %>%
+  filter(!hibrido %in% hibridos_a_excluir)
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_filtered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(Rendimiento))
+
+# Create the barplot using ggplot2
+ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), y = average_rendimiento)) +
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+  labs(title = "Rendimiento por Híbrido", x = "Híbrido", y = "Rendimiento") +  # Establecer etiquetas
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas del eje x
+```
