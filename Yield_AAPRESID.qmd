@@ -35,7 +35,8 @@ library(readxl)
 dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_names.xlsx")
 ```
 
-## Filter
+# NECOCHEA
+## Filter Necochea
 
 ```{r}
 #campaña
@@ -95,3 +96,17 @@ ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), y = average
   labs(title = "Rendimiento por Híbrido", x = "Híbrido", y = "Rendimiento") +  # Establecer etiquetas
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas del eje x
 ```
+## CHASCOMUS
+## Filter Maipú
+```{r}
+#campaña
+campana<- c("2023/24")
+
+dat_1<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Maipú")
+
+dat_2<-dat_1 %>% filter( Sitio %in% site)
+```
+
