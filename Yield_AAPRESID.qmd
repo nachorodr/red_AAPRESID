@@ -32,7 +32,8 @@ library(RColorBrewer)
 
 ```{r}
 library(readxl)
-dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_names.xlsx")
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04272024.xlsx", 
+                sheet= "gen_dens")
 ```
 
 # NECOCHEA
@@ -42,44 +43,551 @@ dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Gir
 #campaña
 campana<- c("2023/24")
 
-dat_1<-dat %>% filter( Año %in% campana)
+dat_1ne<-dat %>% filter( Año %in% campana)
 
 #sitio
-site<- c("Necochea")
+site<- c("necochea")
 
-dat_2<-dat_1 %>% filter( Sitio %in% site)
+dat_2ne<-dat_1ne %>% filter( Sitio %in% site)
+
+#genetica
+Ensay<- c("genetica")
+dat_2ne<-dat_2ne %>% filter( ensayo %in% Ensay)
+```
+
+## Select columns
+```{r}
+dat_3ne <- dat_2ne %>% 
+    dplyr::select("Año","hibrido","Repetición","Rendimiento", 
+                  "HUMEDAD A COSECHA (%)",
+                  "Mat. Grasa Mtra Limpia SSS")
+
+#renombro humedad
+dat_3ne <- dat_3ne %>% 
+                dplyr::rename(humedad = `HUMEDAD A COSECHA (%)`,
+                              MG = `Mat. Grasa Mtra Limpia SSS`)
+```
+
+## Convertir Rendimiento y humedad a numérico
+```{r}
+dat_3ne$Rendimiento <- as.numeric(as.character(dat_3ne$Rendimiento))
+dat_3ne$humedad <- as.numeric(as.character(dat_3ne$humedad))
+```
+
+## Calculo 11%
+```{r}
+dat_4ne<- dat_3ne %>% 
+                dplyr::mutate(rendimiento_11 = ((100 - humedad) * Rendimiento) / (100 - 11))
+```
+
+#### Bar plot
+
+```{r}
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_4ne %>%
+  dplyr::arrange(desc(rendimiento_11))
+
+# Híbridos a excluir
+hibridos_a_excluir <- c("NK 3970 +30%", "NK 3970", "NK 3970 -30%", "NK 3970 Lote")
+
+# Filtrar los datos para excluir los híbridos seleccionados
+data_filtered <- data_ordered %>%
+  filter(!hibrido %in% hibridos_a_excluir)
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_filtered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(rendimiento_11))
+
+# Create the barplot using ggplot2
+p_ne<-ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), 
+                         y = average_rendimiento,
+                         fill = "turquesa")) +
+    guides(fill = FALSE)+
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+        ylab(expression(paste("Rendimiento (kg ha" ^ "-1",")")))+
+        xlab(NULL)+
+    
+         scale_y_continuous(limits = c(0, 3700)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+  # Rotar etiquetas del eje x
+    scale_fill_manual(values = "turquoise")+
+    ggtitle("Necochea")  # Agregar título al gráfico
+```
+## MAIPÚ
+
+## Load data
+
+```{r}
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04272024.xlsx", 
+                sheet= "gen_dens")
+```
+
+## Filter Maipú
+```{r}
+#campaña
+campana<- c("2023/24")
+
+dat_1ma<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Maipú")
+
+dat_2ma<-dat_1ma %>% filter( Sitio %in% site)
+
+#genetica
+Ensay<- c("genetica")
+dat_2ma<-dat_2ma %>% filter( ensayo %in% Ensay)
 ```
 
 ## Select columns
 
 ```{r}
-dat_3 <- dat_2 %>% 
-    dplyr::select("Año","hibrido","Rendimiento")
+dat_3ma <- dat_2ma %>% 
+    dplyr::select("Año","hibrido","Repetición","Rendimiento", "HUMEDAD A COSECHA (%)", "Mat. Grasa Mtra Limpia SSS")
+
+#renombro humedad
+dat_3ma <- dat_3ma %>% 
+                dplyr::rename(humedad = `HUMEDAD A COSECHA (%)`,
+                              MG = `Mat. Grasa Mtra Limpia SSS`)
+```
+
+## Filter rep
+```{r}
+#Rep
+rep<- c("1")
+
+dat_3ma <- dat_3ma %>% 
+                filter(Repetición %in% rep)
+```
+
+## Convertir Rendimiento y humedad a numérico
+```{r}
+dat_3ma$Rendimiento <- as.numeric(as.character(dat_3ma$Rendimiento))
+dat_3ma$humedad <- as.numeric(as.character(dat_3ma$humedad))
+```
+
+## Calculo 11%
+```{r}
+dat_4ma<- dat_3ma %>% 
+                dplyr::mutate(rendimiento_11 = ((100 - humedad) * Rendimiento) / (100 - 11))
+```
+
+#### Bar plot
+```{r}
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_4ma %>%
+  dplyr::arrange(desc(rendimiento_11))
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_ordered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(rendimiento_11))
+
+# Create the barplot using ggplot2
+p_ma<-ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), 
+                         y = average_rendimiento,
+                         fill = "turquesa")) +
+    guides(fill = FALSE)+
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+        ylab(NULL)+
+        xlab(NULL)+
+    
+        scale_y_continuous(limits = c(0, 3700)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+  # Rotar etiquetas del eje x
+    scale_fill_manual(values = "turquoise")+
+    ggtitle("Maipu")  # Agregar título al gráfico
+```
+
+## COW PLOT
+```{r}
+library(cowplot)
+
+Cow_NE_MAI<- cowplot::plot_grid(p_ne,p_ma,
+                              ncol = 2,
+                              rel_widths=c(0.9,0.8))
+
+ggsave("../red_AAPRESID/output/Cow_NE_MAI.tiff",  
+       height = 5, 
+       width = 10, units = "in", dpi = 300)
 ```
 
 
-## Plot
-
+## GUAMINI
 ```{r}
-ggplot()+
-    geom_point(data = dat_3,
-               aes(x= hibrido,
-                   y= Rendimiento,
-                   color= hibrido))
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04272024.xlsx", 
+                sheet= "gen_dens")
+```
+
+## Filter Gua
+```{r}
+#campaña
+campana<- c("2023/24")
+dat_1gua<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Guaminí")
+dat_2gua<-dat_1gua %>% filter( Sitio %in% site)
+
+#genetica
+Ensay<- c("genetica")
+dat_2gua<-dat_2gua %>% filter( ensayo %in% Ensay)
+```
+
+## Select columns
+```{r}
+dat_3gua <- dat_2gua %>% 
+    dplyr::select("Año","hibrido","Repetición","Rendimiento", "HUMEDAD A COSECHA (%)")
+
+#renombro humedad
+dat_3gua <- dat_3gua %>% 
+                dplyr::rename(humedad = `HUMEDAD A COSECHA (%)`)
+```
+
+## Convertir Rendimiento y humedad a numérico
+```{r}
+dat_3gua$Rendimiento <- as.numeric(as.character(dat_3gua$Rendimiento))
+dat_3gua$humedad <- as.numeric(as.character(dat_3gua$humedad))
+```
+
+## Calculo 11%
+```{r}
+dat_4gua<- dat_3gua %>% 
+                dplyr::mutate(rendimiento_11 = ((100 - humedad) * Rendimiento) / (100 - 11))
 ```
 
 ## Bar plot
+```{r}
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_4gua %>%
+   dplyr::arrange(desc(rendimiento_11))
 
+# Híbridos a excluir
+hibridos_a_excluir <- c("NK3969 40000", "NK3969 28000", "NK3969 52000")
+
+# Filtrar los datos para excluir los híbridos seleccionados
+data_filtered <- data_ordered %>%
+  filter(!hibrido %in% hibridos_a_excluir)
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_filtered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(rendimiento_11))
+
+# Create the barplot using ggplot2
+p_gua<-ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), 
+                         y = average_rendimiento,
+                         fill = "turquesa")) +
+    guides(fill = FALSE)+
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+        ylab(expression(paste("Rendimiento (kg ha" ^ "-1",")")))+
+        xlab(NULL)+
+    
+        scale_y_continuous(limits = c(0, 3700)) +
+    
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+  # Rotar etiquetas del eje x
+    scale_fill_manual(values = "turquoise")+
+    ggtitle("Guamini")  # Agregar título al gráfico
+```
+
+## M. MAYER
+```{r}
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04272024.xlsx", 
+                sheet= "gen_dens")
+```
+
+## Filter M.Mayer
+```{r}
+#campaña
+campana<- c("2023/24")
+dat_1mm<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Mauricio Mayer")
+dat_2mm<-dat_1mm %>% filter( Sitio %in% site)
+
+#genetica
+Ensay<- c("genetica")
+dat_2mm<-dat_2mm %>% filter( ensayo %in% Ensay)
+```
+
+## Select columns
+```{r}
+dat_3mm <- dat_2mm %>% 
+    dplyr::select("Año","hibrido","Repetición","Rendimiento", "HUMEDAD A COSECHA (%)")
+
+#renombro humedad
+dat_3mm <- dat_3mm %>% 
+                dplyr::rename(humedad = `HUMEDAD A COSECHA (%)`)
+```
+
+## Convertir Rendimiento y humedad a numérico
+```{r}
+dat_3mm$Rendimiento <- as.numeric(as.character(dat_3mm$Rendimiento))
+dat_3mm$humedad <- as.numeric(as.character(dat_3mm$humedad))
+```
+
+## Calculo 11%
+```{r}
+dat_4mm<- dat_3mm %>% 
+                dplyr::mutate(rendimiento_11 = ((100 - humedad) * Rendimiento) / (100 - 11))
+```
+
+## Bar plot
+```{r}
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_4mm %>%
+  dplyr::arrange(desc(rendimiento_11))
+
+# Híbridos a excluir
+hibridos_a_excluir <- c("SYN3979")
+
+# Filtrar los datos para excluir los híbridos seleccionados
+data_filtered <- data_ordered %>%
+  filter(!hibrido %in% hibridos_a_excluir)
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_filtered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(rendimiento_11))
+
+# Create the barplot using ggplot2
+p_mm<-ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), 
+                         y = average_rendimiento,
+                         fill = "turquesa")) +
+    guides(fill = FALSE)+
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+        ylab(NULL)+
+        xlab(NULL)+
+    
+    scale_y_continuous(limits = c(0, 3700)) +
+    
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+  # Rotar etiquetas del eje x
+    scale_fill_manual(values = "turquoise")+
+    ggtitle("Mayer")  # Agregar título al gráfico
+```
+## COW PLOT GUA - MM
+```{r}
+library(cowplot)
+
+Cow_GUA_MM<- cowplot::plot_grid(p_gua,p_mm,
+                              ncol = 2,
+                              rel_widths=c(0.9,0.8))
+
+ggsave("../red_AAPRESID/output/Cow_GUA_MM.tiff",  
+       height = 5, 
+       width = 10, units = "in", dpi = 300)
+```
+
+
+
+## PILA
+```{r}
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04272024.xlsx", 
+                sheet= "gen_dens")
+```
+
+## Filter Pila
+```{r}
+#campaña
+campana<- c("2023/24")
+dat_1pil<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Pila")
+dat_2pil<-dat_1pil %>% filter(Sitio %in% site)
+
+#genetica
+Ensay<- c("genetica")
+dat_2pil<-dat_2pil %>% filter(ensayo %in% Ensay)
+```
+
+## Select columns
+```{r}
+dat_3pil <- dat_2pil %>% 
+     dplyr::select("Año","hibrido","Repetición","Rendimiento", "HUMEDAD A COSECHA (%)")
+
+#renombro humedad
+dat_3pil <- dat_3pil %>% 
+                dplyr::rename(humedad = `HUMEDAD A COSECHA (%)`)
+```
+
+## Convertir Rendimiento y humedad a numérico
+```{r}
+dat_3pil$Rendimiento <- as.numeric(as.character(dat_3pil$Rendimiento))
+dat_3pil$humedad <- as.numeric(as.character(dat_3pil$humedad))
+```
+
+## Calculo 11%
+```{r}
+dat_4pil<- dat_3pil %>% 
+                dplyr::mutate(rendimiento_11 = ((100 - humedad) * Rendimiento) / (100 - 11))
+```
+
+
+## Bar plot
+```{r}
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_4pil %>%
+  dplyr::arrange(desc(rendimiento_11))
+
+# Híbridos a excluir
+hibridos_a_excluir <- c("ADV 3979 HO")
+
+# Filtrar los datos para excluir los híbridos seleccionados
+data_filtered <- data_ordered %>%
+  filter(!hibrido %in% hibridos_a_excluir)
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_filtered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(rendimiento_11))
+
+# Create the barplot using ggplot2
+p_pi<- ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), 
+                         y = average_rendimiento,
+                         fill = "turquesa")) +
+    guides(fill = FALSE)+
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+        ylab(expression(paste("Rendimiento (kg ha" ^ "-1",")")))+
+        xlab(NULL)+
+    
+    scale_y_continuous(limits = c(0, 3700)) +
+    
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+  # Rotar etiquetas del eje x
+     scale_fill_manual(values = "turquoise")+
+    ggtitle("Pila")  # Agregar título al gráfico
+```
+
+## QUENUMA
+```{r}
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04262024.xlsx")
+```
+
+## Filter Quenuma
+```{r}
+#campaña
+campana<- c("2023/24")
+dat_1que<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Quenumá")
+dat_2que<-dat_1que %>% filter(Sitio %in% site)
+
+#genetica
+Ensay<- c("genetica")
+dat_2que<-dat_2que %>% filter(ensayo %in% Ensay)
+```
+
+## Select columns
+```{r}
+dat_3que <- dat_2que %>% 
+    dplyr::select("Año","hibrido","Repetición","Rendimiento","HUMEDAD A COSECHA (%)")
+
+#renombro humedad
+dat_3que <- dat_3que %>% 
+                dplyr::rename(humedad = `HUMEDAD A COSECHA (%)`)
+```
+
+## Convertir Rendimiento y humedad a numérico
+```{r}
+dat_3que$Rendimiento <- as.numeric(as.character(dat_3que$Rendimiento))
+dat_3que$humedad <- as.numeric(as.character(dat_3que$humedad))
+```
+
+## Calculo 11%
+```{r}
+dat_4que<- dat_3que %>% 
+                dplyr::mutate(rendimiento_11 = ((100 - humedad) * Rendimiento) / (100 - 11))
+```
+
+## Bar plot
+```{r}
+# Order data by Rendimiento (ascending)
+data_ordered <- dat_4que %>%
+  dplyr::arrange(desc(rendimiento_11))
+
+#Híbridos a excluir
+hibridos_a_excluir <- c("ADV 3979 HO")
+
+# Filtrar los datos para excluir los híbridos seleccionados
+data_filtered <- data_ordered %>%
+filter(!hibrido %in% hibridos_a_excluir)
+
+# Calculate average Rendimiento per hybrid
+data_average <- data_ordered %>%
+  group_by(hibrido) %>%
+  summarize(average_rendimiento = mean(rendimiento_11))
+
+# Create the barplot using ggplot2
+p_que<- ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), 
+                         y = average_rendimiento,
+                         fill = "turquesa")) +
+    guides(fill = FALSE)+
+  geom_bar(stat = "identity") +  # Crear barras para cada híbrido
+        ylab(NULL)+
+        xlab(NULL)+
+    
+    scale_y_continuous(limits = c(0, 3700)) +
+    
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+  # Rotar etiquetas del eje x
+     scale_fill_manual(values = "turquoise")+
+    ggtitle("Quenuma")  # Agregar título al gráfico
+```
+
+## COWPLOT PI-QUE
+```{r}
+library(cowplot)
+
+Cow_PI_QUE<- cowplot::plot_grid(p_pi,p_que,
+                              ncol = 2,
+                              rel_widths=c(0.9,0.8))
+
+ggsave("../red_AAPRESID/output/Cow_PI_QUE.tiff",  
+       height = 5, 
+       width = 10, units = "in", dpi = 300)
+```
+
+## MIRAMAR
+```{r}
+library(readxl)
+dat<- read_xlsx("~/Red girasol AAPRESID/red_AAPRESID/imput/data/Base_general_Girasol_04262024.xlsx")
+```
+
+## Filter Miramar
+```{r}
+#campaña
+campana<- c("2023/24")
+
+dat_1mir<-dat %>% filter( Año %in% campana)
+
+#sitio
+site<- c("Miramar")
+
+dat_2mir<-dat_1mir %>% filter(Sitio %in% site)
+```
+
+## Select columns
+```{r}
+dat_3mir <- dat_2mir %>% 
+    dplyr::select("Año","hibrido","Repetición","Rendimiento")
+```
+
+## Bar plot
 ```{r}
 # Convertir Rendimiento a numérico
-dat_3$Rendimiento <- as.numeric(as.character(dat_3$Rendimiento))
+dat_3mir$Rendimiento <- as.numeric(as.character(dat_3mir$Rendimiento))
 
 # Order data by Rendimiento (ascending)
-data_ordered <- dat_3 %>%
+data_ordered <- dat_3mir %>%
   dplyr::arrange(desc(Rendimiento))
 
 # Híbridos a excluir
-hibridos_a_excluir <- c("NK 3970 +30%", "NK 3970", "NK 3970 -30%", "NK 3970 Lote")
+hibridos_a_excluir <- c("SYN3979")
 
 # Filtrar los datos para excluir los híbridos seleccionados
 data_filtered <- data_ordered %>%
@@ -96,17 +604,3 @@ ggplot(data_average, aes(x = reorder(hibrido, -average_rendimiento), y = average
   labs(title = "Rendimiento por Híbrido", x = "Híbrido", y = "Rendimiento") +  # Establecer etiquetas
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas del eje x
 ```
-## CHASCOMUS
-## Filter Maipú
-```{r}
-#campaña
-campana<- c("2023/24")
-
-dat_1<-dat %>% filter( Año %in% campana)
-
-#sitio
-site<- c("Maipú")
-
-dat_2<-dat_1 %>% filter( Sitio %in% site)
-```
-
